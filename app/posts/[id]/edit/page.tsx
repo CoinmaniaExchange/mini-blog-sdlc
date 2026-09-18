@@ -10,7 +10,7 @@ export default async function EditPostPage(props: PageProps<"/posts/[id]/edit">)
   if (!post) notFound();
 
   return (
-    <main className="rounded-xl border bg-white p-6">
+    <main className="rounded-xl border bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
       <h1 className="mb-4 text-xl font-bold">პოსტის რედაქტირება</h1>
       <PostForm initial={post} />
     </main>

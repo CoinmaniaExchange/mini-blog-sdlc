@@ -33,23 +33,23 @@ export default function CommentForm({ postId }: { postId: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-4 space-y-3 rounded-xl border p-4">
+    <form onSubmit={onSubmit} className="mt-4 space-y-3 rounded-xl border p-4 dark:border-zinc-800">
       <h3 className="font-medium">კომენტარის დამატება</h3>
       <input
         value={authorName}
         onChange={(e) => setAuthorName(e.target.value)}
         placeholder="სახელი (არასავალდებულო, ცარიელი = ანონიმი)"
-        className="w-full rounded-lg border px-3 py-2"
+        className="w-full rounded-lg border bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
       />
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="დაწერე კომენტარი..."
         rows={3}
-        className="w-full rounded-lg border px-3 py-2"
+        className="w-full rounded-lg border bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <button className="rounded-full bg-zinc-900 px-5 py-2 text-sm text-white">
+      <button className="rounded-full bg-zinc-900 px-5 py-2 text-sm text-white dark:bg-white dark:text-zinc-900">
         გაგზავნა
       </button>
     </form>

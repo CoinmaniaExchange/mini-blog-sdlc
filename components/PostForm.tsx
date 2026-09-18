@@ -60,7 +60,7 @@ export default function PostForm({ initial }: { initial?: Post }) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border px-3 py-2"
+          className="w-full rounded-lg border bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           placeholder="მაგ: ჩემი პირველი პოსტი"
         />
       </div>
@@ -72,7 +72,7 @@ export default function PostForm({ initial }: { initial?: Post }) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={8}
-          className="w-full rounded-lg border px-3 py-2"
+          className="w-full rounded-lg border bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           placeholder="დაწერე პოსტის ტექსტი ქართულად..."
         />
       </div>
@@ -83,21 +83,21 @@ export default function PostForm({ initial }: { initial?: Post }) {
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className="w-full rounded-lg border px-3 py-2"
+          className="w-full rounded-lg border bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
           disabled={saving}
-          className="rounded-full bg-zinc-900 px-5 py-2 text-white disabled:opacity-50"
+          className="rounded-full bg-zinc-900 px-5 py-2 text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
         >
           {saving ? "ინახება..." : "შენახვა"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-full border px-5 py-2"
+          className="rounded-full border px-5 py-2 dark:border-zinc-700"
         >
           გაუქმება
         </button>
