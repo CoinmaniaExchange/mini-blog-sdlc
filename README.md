@@ -52,10 +52,14 @@ scripts/        # e2e-api.mjs
 .github/workflows/ci.yml  # lint + test + build
 ```
 
-## ცნობილი შეზღუდვები (სასწავლო)
+## მონაცემები
 
-- მონაცემები JSON ფაილში ინახება — Vercel-ზე (serverless) ჩაწერა არ პერსისტდება, დემო რესტარტზე უბრუნდება seed-ს.
-- v2 იდეები: hosted DB (Neon Postgres + Prisma), ავტორიზაცია, სურათები, pagination, Playwright E2E.
+- **v2 (მიმდინარე):** Neon Postgres + Prisma (`lib/store.ts` → Prisma, `prisma/schema.prisma`). Seed: `node scripts/seed-neon.mjs`. Production-ზე შენახვა პერსისტდება — დადასტურებულია ტელეფონიდან.
+- v1 იყო JSON ფაილი (`data/*.json`) — Vercel-ზე read-only FS-ის გამო წერა 503-ით ვარდებოდა (Issue #1, გასწორებულია + მიგრირებულია).
+
+## ცნობილი შეზღუდვები / შემდეგი
+
+- ავტორიზაცია არ არის (v3 კანდიდატი), pagination არ არის, Playwright E2E არ არის.
 
 ## SDLC დღიური
 
@@ -65,3 +69,4 @@ scripts/        # e2e-api.mjs
 4. ტესტირება: 11 unit + 8 E2E ნაბიჯი, ყველა მწვანე
 5. დეპლოი: GitHub + CI + Vercel
 6. მხარდაჭერა: ბაგები — GitHub Issues-ით, ეტიკეტები `bug`/`enhancement`
+7. v2: Issue #1 (500 prod-ზე) → დიაგნოზი (read-only FS) → პატიოსანი 503 → მიგრაცია Neon Postgres + Prisma 7-ზე → env CLI-ით → prod-ზე verified (201 → persist → delete)
