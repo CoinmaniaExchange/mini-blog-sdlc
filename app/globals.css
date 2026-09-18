@@ -27,6 +27,20 @@ h3 {
   text-wrap: balance;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a1a1aa;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #71717a;
+}
+
 ::selection {
   background: #18181b;
   color: #fafafa;

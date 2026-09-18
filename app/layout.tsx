@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <header className="border-b bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-            <Link href="/" className="text-lg font-bold">
+            <Link href="/" className="text-lg font-bold dark:text-zinc-50">
               მინი ბლოგი
             </Link>
             <div className="flex items-center gap-2">
