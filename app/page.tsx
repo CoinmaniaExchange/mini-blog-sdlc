@@ -32,6 +32,32 @@ export default async function Home(props: PageProps<"/">) {
 
   return (
     <main className="space-y-5">
+      <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-600 p-8 text-white sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+          SDLC სასწავლო პროექტი
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">
+          მინი ბლოგი
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-300">
+          ვწერთ SDLC-ზე, Kanban-ზე და Next.js-ზე — ქართულად, პრაქტიკიდან.
+        </p>
+        <div className="mt-4 flex items-center gap-4 text-sm">
+          <span className="rounded-full bg-white/10 px-3 py-1">
+            📝 {total} პოსტი
+          </span>
+          <span className="rounded-full bg-white/10 px-3 py-1">
+            🏷️ {tags.length} თეგი
+          </span>
+          <Link
+            href="/posts/new"
+            className="ml-auto hidden rounded-full bg-white px-4 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:inline-block"
+          >
+            + ახალი პოსტი
+          </Link>
+        </div>
+      </section>
+
       <form method="get" className="flex flex-col gap-2 sm:flex-row">
         <input
           name="q"
