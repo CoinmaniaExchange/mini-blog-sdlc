@@ -1,8 +1,18 @@
 import Link from "next/link";
 import PostCard from "@/components/PostCard";
-import { getAllTags, searchPosts } from "@/lib/store";
+import { getAllTags, listPosts } from "@/lib/store";
+import { normalizePage } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
+
+function pageHref(q: string, tag: string, page: number): string {
+  const sp = new URLSearchParams();
+  if (q) sp.set("q", q);
+  if (tag) sp.set("tag", tag);
+  if (page > 1) sp.set("page", String(page));
+  const s = sp.toString();
+  return s ? `/?${s}` : "/";
+}
 
 export default async function Home(props: PageProps<"/">) {
   const searchParams = await props.searchParams;
@@ -10,11 +20,15 @@ export default async function Home(props: PageProps<"/">) {
     typeof searchParams?.q === "string" ? searchParams.q : "";
   const tag =
     typeof searchParams?.tag === "string" ? searchParams.tag : "";
+  const requestedPage = normalizePage(searchParams?.page);
 
-  const [posts, tags] = await Promise.all([
-    searchPosts(q, tag),
-    getAllTags(),
-  ]);
+  const tags = await getAllTags();
+  let result = await listPosts({ q, tag, page: requestedPage });
+  const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
+  if (requestedPage > totalPages) {
+    result = await listPosts({ q, tag, page: totalPages });
+  }
+  const { posts, total, page, pageSize } = result;
 
   return (
     <main className="space-y-5">
@@ -42,26 +56,26 @@ export default async function Home(props: PageProps<"/">) {
         </button>
       </form>
 
-      {(q || tag) && (
-        <div className="text-sm text-zinc-600">
-          {posts.length} შედეგი
-          {q && (
-            <>
-              {" "}
-              ძებნაზე: <b>{q}</b>
-            </>
-          )}
-          {tag && (
-            <>
-              {" "}
-              თეგი: <b>#{tag}</b>
-            </>
-          )}{" "}
+      <div className="text-sm text-zinc-600">
+        სულ {total} პოსტი
+        {q && (
+          <>
+            {" "}
+            ძებნაზე: <b>{q}</b>
+          </>
+        )}
+        {tag && (
+          <>
+            {" "}
+            თეგი: <b>#{tag}</b>
+          </>
+        )}
+        {(q || tag) && (
           <Link href="/" className="ml-2 underline">
             გასუფთავება
           </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       {posts.length === 0 ? (
         <div className="rounded-xl border bg-white p-10 text-center">
@@ -82,6 +96,43 @@ export default async function Home(props: PageProps<"/">) {
             <PostCard key={post.id} post={post} />
           ))}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-3 pt-2">
+          {page > 1 ? (
+            <Link
+              href={pageHref(q, tag, page - 1)}
+              className="rounded-full border bg-white px-4 py-1.5 text-sm hover:bg-zinc-100"
+            >
+              ‹ წინა
+            </Link>
+          ) : (
+            <span className="rounded-full border bg-zinc-100 px-4 py-1.5 text-sm text-zinc-400">
+              ‹ წინა
+            </span>
+          )}
+          <span className="text-sm text-zinc-600">
+            გვერდი {page} / {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={pageHref(q, tag, page + 1)}
+              className="rounded-full border bg-white px-4 py-1.5 text-sm hover:bg-zinc-100"
+            >
+              შემდეგი ›
+            </Link>
+          ) : (
+            <span className="rounded-full border bg-zinc-100 px-4 py-1.5 text-sm text-zinc-400">
+              შემდეგი ›
+            </span>
+          )}
+        </nav>
+      )}
+      {total > 0 && total <= pageSize && (
+        <p className="text-center text-xs text-zinc-400">
+          ყველა პოსტი ერთ გვერდზეა
+        </p>
       )}
     </main>
   );

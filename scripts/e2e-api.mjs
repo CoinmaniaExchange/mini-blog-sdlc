@@ -16,8 +16,21 @@ function check(name, cond, extra = "") {
 }
 
 const res = await fetch(`${BASE}/api/posts`);
-const list = await res.json();
+const data = await res.json();
+const list = data.posts ?? data;
 check("სიის წამოღება (seed პოსტები)", res.ok && list.length >= 3, `got=${list?.length}`);
+
+// pagination
+const p1 = await (await fetch(`${BASE}/api/posts?page=1&pageSize=2`)).json();
+const p2 = await (await fetch(`${BASE}/api/posts?page=2&pageSize=2`)).json();
+check(
+  "pagination: გვერდები + total",
+  p1.total >= 3 && p1.posts.length <= 2 && p2.page === 2 &&
+    (p1.posts[0]?.id !== p2.posts[0]?.id || p2.posts.length === 0),
+  JSON.stringify({ t: p1.total, p1: p1.posts.length, p2: p2.posts.length })
+);
+const bad = await (await fetch(`${BASE}/api/posts?page=abc`)).json();
+check("pagination: არასწორი page → 1", bad.page === 1);
 
 // 1. შექმნა
 const createRes = await fetch(`${BASE}/api/posts`, {

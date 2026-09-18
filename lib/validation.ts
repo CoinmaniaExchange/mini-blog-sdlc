@@ -53,3 +53,18 @@ export function excerpt(content: string, length = 120): string {
   const flat = content.replace(/\s+/g, " ").trim();
   return flat.length <= length ? flat : flat.slice(0, length) + "…";
 }
+
+export function normalizePage(raw: unknown): number {
+  const s = Array.isArray(raw) ? raw[0] : raw;
+  if (s == null || s === "") return 1;
+  const n = Math.floor(Number(s));
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
+export function normalizePageSize(raw: unknown, def = 5): number {
+  const s = Array.isArray(raw) ? raw[0] : raw;
+  if (s == null || s === "") return def;
+  const n = Math.floor(Number(s));
+  if (!Number.isFinite(n)) return def;
+  return Math.min(Math.max(n, 1), 50);
+}

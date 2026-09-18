@@ -115,26 +115,57 @@ export async function createComment(
   return toComment(comment);
 }
 
+export const PAGE_SIZE = 5;
+
+export interface PagedPosts {
+  posts: Post[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+function buildWhere(query: string, t: string) {
+  return {
+    AND: [
+      query
+        ? {
+            OR: [
+              { title: { contains: query, mode: "insensitive" as const } },
+              { content: { contains: query, mode: "insensitive" as const } },
+            ],
+          }
+        : {},
+      t ? { tags: { has: t } } : {},
+    ],
+  };
+}
+
+export async function listPosts(opts: {
+  q?: string;
+  tag?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PagedPosts> {
+  const query = (opts.q ?? "").trim();
+  const t = (opts.tag ?? "").trim().toLowerCase();
+  const pageSize = Math.min(Math.max(opts.pageSize ?? PAGE_SIZE, 1), 50);
+  const page = Math.max(opts.page ?? 1, 1);
+  const where = buildWhere(query, t);
+  const [total, rows] = await Promise.all([
+    prisma.post.count({ where }),
+    prisma.post.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return { posts: rows.map(toPost), total, page, pageSize };
+}
+
 export async function searchPosts(q: string, tag: string): Promise<Post[]> {
-  const query = q.trim();
-  const t = tag.trim().toLowerCase();
-  const posts = await prisma.post.findMany({
-    where: {
-      AND: [
-        query
-          ? {
-              OR: [
-                { title: { contains: query, mode: "insensitive" } },
-                { content: { contains: query, mode: "insensitive" } },
-              ],
-            }
-          : {},
-        t ? { tags: { has: t } } : {},
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return posts.map(toPost);
+  const { posts } = await listPosts({ q, tag, page: 1, pageSize: 1000 });
+  return posts;
 }
 
 export async function getAllTags(): Promise<string[]> {

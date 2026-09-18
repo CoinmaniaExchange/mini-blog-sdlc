@@ -1,15 +1,19 @@
 import { NextRequest } from "next/server";
-import { createPost, searchPosts, storeErrorResponse } from "@/lib/store";
-import { parseTags, validatePost } from "@/lib/validation";
+import { createPost, listPosts, storeErrorResponse } from "@/lib/store";
+import { normalizePage, normalizePageSize, parseTags, validatePost } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get("q") ?? "";
-  const tag = request.nextUrl.searchParams.get("tag") ?? "";
-  const posts = await searchPosts(q, tag);
-  return Response.json(posts);
+  const sp = request.nextUrl.searchParams;
+  const result = await listPosts({
+    q: sp.get("q") ?? "",
+    tag: sp.get("tag") ?? "",
+    page: normalizePage(sp.get("page")),
+    pageSize: normalizePageSize(sp.get("pageSize")),
+  });
+  return Response.json(result);
 }
 
 export async function POST(request: Request) {

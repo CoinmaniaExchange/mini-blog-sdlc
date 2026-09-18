@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   excerpt,
+  normalizePage,
+  normalizePageSize,
   parseTags,
   validateComment,
   validatePost,
@@ -64,6 +66,32 @@ describe("validateComment", () => {
       text: "კარგი პოსტია",
     });
     expect(errors.authorName).toMatch("მაქსიმუმ 30");
+  });
+});
+
+describe("normalizePage", () => {
+  it("ვალიდური რიცხვი → იგივე", () => {
+    expect(normalizePage("3")).toBe(3);
+  });
+
+  it("უარყოფითი, ნული, ტექსტი, ცარიელი → 1", () => {
+    expect(normalizePage("0")).toBe(1);
+    expect(normalizePage("-2")).toBe(1);
+    expect(normalizePage("abc")).toBe(1);
+    expect(normalizePage(null)).toBe(1);
+    expect(normalizePage(undefined)).toBe(1);
+    expect(normalizePage("")).toBe(1);
+  });
+});
+
+describe("normalizePageSize", () => {
+  it("ზღვრებში ჯდება 1..50", () => {
+    expect(normalizePageSize("10")).toBe(10);
+    expect(normalizePageSize("0")).toBe(1);
+    expect(normalizePageSize("999")).toBe(50);
+    expect(normalizePageSize("abc")).toBe(5);
+    expect(normalizePageSize(null)).toBe(5);
+    expect(normalizePageSize(undefined)).toBe(5);
   });
 });
 
