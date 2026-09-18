@@ -1,29 +1,26 @@
-import { promises as fs } from "fs";
-import path from "path";
+import type { Comment as PrismaComment, Post as PrismaPost } from "../src/generated/prisma/client";
+import { prisma } from "./prisma";
 import type { Comment, Post, PostInput, CommentInput } from "./types";
 
-const dataDir = path.join(process.cwd(), "data");
-const postsFile = path.join(dataDir, "posts.json");
-const commentsFile = path.join(dataDir, "comments.json");
-
-async function readJson<T>(file: string, fallback: T): Promise<T> {
-  try {
-    const raw = await fs.readFile(file, "utf-8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+function toPost(p: PrismaPost): Post {
+  return {
+    id: p.id,
+    title: p.title,
+    content: p.content,
+    tags: p.tags,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
 }
 
-async function writeJson(file: string, data: unknown): Promise<void> {
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, JSON.stringify(data, null, 2), "utf-8");
-}
-
-function uid(): string {
-  return (
-    Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-  );
+function toComment(c: PrismaComment): Comment {
+  return {
+    id: c.id,
+    postId: c.postId,
+    authorName: c.authorName,
+    text: c.text,
+    createdAt: c.createdAt.toISOString(),
+  };
 }
 
 // Vercel-ზე (read-only FS) ჩაწერა EROFS-ით ვარდება —
@@ -40,101 +37,109 @@ export function storeErrorResponse(e: unknown): Response {
 }
 
 export async function getPosts(): Promise<Post[]> {
-  const posts = await readJson<Post[]>(postsFile, []);
-  return posts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const posts = await prisma.post.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+  return posts.map(toPost);
 }
 
 export async function getPost(id: string): Promise<Post | null> {
-  const posts = await getPosts();
-  return posts.find((p) => p.id === id) ?? null;
+  const post = await prisma.post.findUnique({ where: { id } });
+  return post ? toPost(post) : null;
 }
 
 export async function createPost(input: PostInput): Promise<Post> {
-  const posts = await getPosts();
-  const now = new Date().toISOString();
-  const post: Post = {
-    id: uid(),
-    title: input.title.trim(),
-    content: input.content.trim(),
-    tags: input.tags,
-    createdAt: now,
-    updatedAt: now,
-  };
-  await writeJson(postsFile, [post, ...posts]);
-  return post;
+  const post = await prisma.post.create({
+    data: {
+      title: input.title.trim(),
+      content: input.content.trim(),
+      tags: input.tags,
+    },
+  });
+  return toPost(post);
+}
+
+function isNotFound(e: unknown): boolean {
+  return (e as { code?: string })?.code === "P2025";
 }
 
 export async function updatePost(
   id: string,
   input: PostInput
 ): Promise<Post | null> {
-  const posts = await getPosts();
-  const idx = posts.findIndex((p) => p.id === id);
-  if (idx === -1) return null;
-  const updated: Post = {
-    ...posts[idx],
-    title: input.title.trim(),
-    content: input.content.trim(),
-    tags: input.tags,
-    updatedAt: new Date().toISOString(),
-  };
-  posts[idx] = updated;
-  await writeJson(postsFile, posts);
-  return updated;
+  try {
+    const post = await prisma.post.update({
+      where: { id },
+      data: {
+        title: input.title.trim(),
+        content: input.content.trim(),
+        tags: input.tags,
+      },
+    });
+    return toPost(post);
+  } catch (e) {
+    if (isNotFound(e)) return null;
+    throw e;
+  }
 }
 
 export async function deletePost(id: string): Promise<boolean> {
-  const posts = await getPosts();
-  const filtered = posts.filter((p) => p.id !== id);
-  if (filtered.length === posts.length) return false;
-  await writeJson(postsFile, filtered);
-  const comments = await readJson<Comment[]>(commentsFile, []);
-  await writeJson(
-    commentsFile,
-    comments.filter((c) => c.postId !== id)
-  );
-  return true;
+  try {
+    await prisma.post.delete({ where: { id } });
+    return true;
+  } catch (e) {
+    if (isNotFound(e)) return false;
+    throw e;
+  }
 }
 
 export async function getComments(postId: string): Promise<Comment[]> {
-  const comments = await readJson<Comment[]>(commentsFile, []);
-  return comments
-    .filter((c) => c.postId === postId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const comments = await prisma.comment.findMany({
+    where: { postId },
+    orderBy: { createdAt: "asc" },
+  });
+  return comments.map(toComment);
 }
 
 export async function createComment(
   postId: string,
   input: CommentInput
 ): Promise<Comment> {
-  const comments = await readJson<Comment[]>(commentsFile, []);
-  const comment: Comment = {
-    id: uid(),
-    postId,
-    authorName: input.authorName.trim(),
-    text: input.text.trim(),
-    createdAt: new Date().toISOString(),
-  };
-  await writeJson(commentsFile, [...comments, comment]);
-  return comment;
+  const comment = await prisma.comment.create({
+    data: {
+      postId,
+      authorName: input.authorName.trim(),
+      text: input.text.trim(),
+    },
+  });
+  return toComment(comment);
 }
 
 export async function searchPosts(q: string, tag: string): Promise<Post[]> {
-  const posts = await getPosts();
-  const query = q.trim().toLowerCase();
-  return posts.filter((p) => {
-    const matchQ =
-      !query ||
-      p.title.toLowerCase().includes(query) ||
-      p.content.toLowerCase().includes(query);
-    const matchTag = !tag || p.tags.includes(tag.toLowerCase());
-    return matchQ && matchTag;
+  const query = q.trim();
+  const t = tag.trim().toLowerCase();
+  const posts = await prisma.post.findMany({
+    where: {
+      AND: [
+        query
+          ? {
+              OR: [
+                { title: { contains: query, mode: "insensitive" } },
+                { content: { contains: query, mode: "insensitive" } },
+              ],
+            }
+          : {},
+        t ? { tags: { has: t } } : {},
+      ],
+    },
+    orderBy: { createdAt: "desc" },
   });
+  return posts.map(toPost);
 }
 
 export async function getAllTags(): Promise<string[]> {
-  const posts = await getPosts();
+  const posts = await prisma.post.findMany({ select: { tags: true } });
   const set = new Set<string>();
-  posts.forEach((p) => p.tags.forEach((t) => set.add(t)));
+  posts.forEach((p) => p.tags.forEach((tag) => set.add(tag)));
   return [...set].sort();
 }
