@@ -26,6 +26,19 @@ function uid(): string {
   );
 }
 
+// Vercel-ზე (read-only FS) ჩაწერა EROFS-ით ვარდება —
+// მაგ შემთხვევაში ვაბრუნებთ 503-ს პატიოსანი ქართული მესიჯით.
+export function storeErrorResponse(e: unknown): Response {
+  const code = (e as NodeJS.ErrnoException | null)?.code;
+  if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+    return Response.json(
+      { error: "დემო რეჟიმში შენახვა მიუწვდომელია" },
+      { status: 503 }
+    );
+  }
+  return Response.json({ error: "სერვერის შეცდომა" }, { status: 500 });
+}
+
 export async function getPosts(): Promise<Post[]> {
   const posts = await readJson<Post[]>(postsFile, []);
   return posts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));

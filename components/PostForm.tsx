@@ -28,17 +28,24 @@ export default function PostForm({ initial }: { initial?: Post }) {
           tags: parseTags(tags),
         }),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => null)) as {
+        id?: string;
+        error?: string;
+        errors?: Record<string, string>;
+      } | null;
       if (!res.ok) {
-        const first =
-          data?.errors && Object.values(data.errors)[0];
-        setError(String(first ?? data?.error ?? "შეცდომა შენახვისას"));
+        const first = data?.errors && Object.values(data.errors)[0];
+        setError(String(first ?? data?.error ?? `შეცდომა (${res.status})`));
+        return;
+      }
+      if (!data?.id) {
+        setError("სერვერმა ცარიელი პასუხი დააბრუნა");
         return;
       }
       router.push(`/posts/${data.id}`);
       router.refresh();
     } catch {
-      setError("ქსელის შეცდომა");
+      setError("ქსელის შეცდომა. შეამოწმე ინტერნეტი");
     } finally {
       setSaving(false);
     }

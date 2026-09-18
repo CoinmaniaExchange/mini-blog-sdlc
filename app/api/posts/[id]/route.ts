@@ -1,4 +1,4 @@
-import { deletePost, getPost, updatePost } from "@/lib/store";
+import { deletePost, getPost, storeErrorResponse, updatePost } from "@/lib/store";
 import { parseTags, validatePost } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -40,7 +40,8 @@ export async function PUT(
     title: String(body.title),
     content: String(body.content),
     tags,
-  });
+  }).catch((e) => storeErrorResponse(e));
+  if (updated instanceof Response) return updated;
   if (!updated) {
     return Response.json({ error: "პოსტი ვერ მოიძებნა" }, { status: 404 });
   }
@@ -52,7 +53,12 @@ export async function DELETE(
   ctx: RouteContext<"/api/posts/[id]">
 ) {
   const { id } = await ctx.params;
-  const ok = await deletePost(id);
+  let ok: boolean;
+  try {
+    ok = await deletePost(id);
+  } catch (e) {
+    return storeErrorResponse(e);
+  }
   if (!ok) {
     return Response.json({ error: "პოსტი ვერ მოიძებნა" }, { status: 404 });
   }

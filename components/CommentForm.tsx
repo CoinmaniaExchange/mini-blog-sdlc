@@ -17,10 +17,15 @@ export default function CommentForm({ postId }: { postId: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ authorName, text }),
     });
-    const data = await res.json();
+    let data: { error?: string; errors?: Record<string, string> } | null = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
     if (!res.ok) {
       const first = data?.errors && Object.values(data.errors)[0];
-      setError(String(first ?? data?.error ?? "შეცდომა"));
+      setError(String(first ?? data?.error ?? `შეცდომა (${res.status})`));
       return;
     }
     setText("");

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createPost, searchPosts } from "@/lib/store";
+import { createPost, searchPosts, storeErrorResponse } from "@/lib/store";
 import { parseTags, validatePost } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -28,10 +28,14 @@ export async function POST(request: Request) {
   if (Object.keys(errors).length > 0) {
     return Response.json({ error: "ვალიდაცია ვერ გაიარა", errors }, { status: 400 });
   }
-  const post = await createPost({
-    title: String(body.title),
-    content: String(body.content),
-    tags,
-  });
-  return Response.json(post, { status: 201 });
+  try {
+    const post = await createPost({
+      title: String(body.title),
+      content: String(body.content),
+      tags,
+    });
+    return Response.json(post, { status: 201 });
+  } catch (e) {
+    return storeErrorResponse(e);
+  }
 }

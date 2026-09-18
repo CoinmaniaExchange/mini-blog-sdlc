@@ -10,7 +10,21 @@ export default function DeleteButton({ id }: { id: string }) {
   async function onDelete() {
     if (!confirm("დარწმუნებული ხარ რომ გინდა წაშლა?")) return;
     setBusy(true);
-    await fetch(`/api/posts/${id}`, { method: "DELETE" });
+    try {
+      const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        alert(data?.error ?? `წაშლა ვერ მოხერხდა (${res.status})`);
+        return;
+      }
+    } catch {
+      alert("ქსელის შეცდომა. შეამოწმე ინტერნეტი");
+      return;
+    } finally {
+      setBusy(false);
+    }
     router.push("/");
     router.refresh();
   }

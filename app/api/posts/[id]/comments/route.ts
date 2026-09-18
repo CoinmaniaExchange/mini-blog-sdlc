@@ -1,4 +1,4 @@
-import { createComment, getComments, getPost } from "@/lib/store";
+import { createComment, getComments, getPost, storeErrorResponse } from "@/lib/store";
 import { validateComment } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -36,9 +36,13 @@ export async function POST(
   if (Object.keys(errors).length > 0) {
     return Response.json({ error: "ვალიდაცია ვერ გაიარა", errors }, { status: 400 });
   }
-  const comment = await createComment(id, {
-    authorName: String(body.authorName ?? ""),
-    text: String(body.text),
-  });
-  return Response.json(comment, { status: 201 });
+  try {
+    const comment = await createComment(id, {
+      authorName: String(body.authorName ?? ""),
+      text: String(body.text),
+    });
+    return Response.json(comment, { status: 201 });
+  } catch (e) {
+    return storeErrorResponse(e);
+  }
 }
